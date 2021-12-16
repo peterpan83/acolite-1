@@ -4,8 +4,8 @@ parameter_labels=config/parameter_labels.txt
 parameter_cf_attributes=config/parameter_cf_attributes.json
 
 ## EarthData
-EARTHDATA_u=
-EARTHDATA_p=
+EARTHDATA_u=peterpan83
+EARTHDATA_p=JF6BzA@Vgv!p3np
 
 ## Data directory
 data_dir=data

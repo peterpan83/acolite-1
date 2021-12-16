@@ -5,7 +5,7 @@
 ## modifications: 2021-04-14 (QV) added output to settings if not configured
 ##                2021-04-15 (QV) test/parse input files
 
-def acolite_run(settings, inputfile=None, output=None, limit=None, verbosity=0):
+def acolite_run_test(settings, inputfile=None, output=None, limit=None, verbosity=0):
     import datetime, os, mimetypes
     import acolite as ac
 
@@ -119,7 +119,7 @@ def acolite_run(settings, inputfile=None, output=None, limit=None, verbosity=0):
             if l1r_setu['atmospheric_correction']:
                 if gatts['acolite_file_type'] == 'L1R':
                     ## run ACOLITE
-                    ret = ac.acolite.acolite_l2r_test(l1r, settings = setu, verbosity = verbosity)
+                    ret = ac.acolite.acolite_l2r(l1r, settings = setu, verbosity = verbosity)
                     if len(ret) != 2: continue
                     l2r, l2r_setu = ret
                 else:
@@ -128,13 +128,31 @@ def acolite_run(settings, inputfile=None, output=None, limit=None, verbosity=0):
 
                 if (l2r_setu['adjacency_correction']):
                     ret = None
+                    iter = 0
+                    if (l2r_setu['adjacency_method']=='ajfilter'):
+                        adj_cor = ac.adjacency.ajfilter.ajfilter(l1r=l1r,l2r=l2r,settings=setu)
+                        # attrs = ac.shared.nc_gatts(l2r)
+                        # ac_mode = 'continental' if attrs['ac_model'].find('MOD1') > 0 else 'maritime'
+                        while (iter<5):
+                            attrs = ac.shared.nc_gatts(l2r)
+                            vza = attrs['vza']
+                            aot_550 = ac.shared.nc_read(l2r, 'aot_550')[0].mean()
+
+                            ac_mode = 'continental' if attrs['ac_model'].find('MOD1') > 0 else 'maritime'
+
+                            l1r_cor = adj_cor.run(acmode=ac_mode,aot550=aot_550,senz=vza,iteration=iter)
+                            ret = ac.acolite.acolite_l2r(l1r_cor, settings=setu, verbosity=verbosity)
+                            l2r, l2r_setu = ret
+                            iter += 1
+
+
                     ## acstar3 adjacency correction
                     if (l2r_setu['adjacency_method']=='acstar3'):
                         ret = ac.adjacency.acstar3.acstar3(l2r, setu = l2r_setu, verbosity = verbosity)
                     ## GLAD
                     if (l2r_setu['adjacency_method']=='glad'):
                         ret = ac.adjacency.glad.glad_l2r(l2r, verbosity = verbosity)
-                    l2r = [] if ret is None else ret
+                        l2r = [] if ret is None else ret
 
                 ## if we have multiple l2r files
                 if type(l2r) is not list: l2r = [l2r]

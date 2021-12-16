@@ -41,7 +41,6 @@ def get(date, lon, lat, local_dir=None, quiet=True, kind='linear', verbosity=0):
 
     ## set up ancillary
     anc = {'date':date, 'lon':lon, 'lat': lat, 'ftime':ftime}
-
     ## interpolate ozone
     if ozone_file is None:
         if verbosity > 0: print('No ozone file found for {}'.format(date))

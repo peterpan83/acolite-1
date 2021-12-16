@@ -18,9 +18,10 @@ class gem(object):
             self.bands = {}
             self.verbosity = 0
             self.nc_projection = None
+            self.new = new
 
             if new:
-                self.new = True
+                # self.new = True
                 if os.path.exists(self.file):
                     os.remove(self.file)
 
@@ -70,6 +71,7 @@ class gem(object):
                     return(cdata, catt)
                 else:
                     return(cdata)
+
 
         def write(self, ds, data, ds_att = {}):
             if self.new:
