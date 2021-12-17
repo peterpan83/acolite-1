@@ -133,14 +133,17 @@ def acolite_run_test(settings, inputfile=None, output=None, limit=None, verbosit
                         adj_cor = ac.adjacency.ajfilter.ajfilter(l1r=l1r,l2r=l2r,settings=setu)
                         # attrs = ac.shared.nc_gatts(l2r)
                         # ac_mode = 'continental' if attrs['ac_model'].find('MOD1') > 0 else 'maritime'
+                        aot_550 = 0
                         while (iter<5):
                             attrs = ac.shared.nc_gatts(l2r)
                             vza = attrs['vza']
-                            aot_550 = ac.shared.nc_read(l2r, 'aot_550')[0].mean()
-
+                            aot_550_cur = ac.shared.nc_read(l2r, 'aot_550')[0].mean()
                             ac_mode = 'continental' if attrs['ac_model'].find('MOD1') > 0 else 'maritime'
 
-                            l1r_cor = adj_cor.run(acmode=ac_mode,aot550=aot_550,senz=vza,iteration=iter)
+                            if abs(aot_550_cur-aot_550)<0.01:
+                                break
+                            aot_550 = aot_550_cur
+                            l1r_cor = adj_cor.run(acmode=ac_mode,aot550=aot_550_cur,senz=vza,iteration=iter)
                             ret = ac.acolite.acolite_l2r(l1r_cor, settings=setu, verbosity=verbosity)
                             l2r, l2r_setu = ret
                             iter += 1
