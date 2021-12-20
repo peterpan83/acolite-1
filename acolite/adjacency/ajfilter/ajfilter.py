@@ -84,11 +84,11 @@ class ajfilter():
                 continue
             self.rhot_adj_original.append((band_name,b,rhot,attr))
 
-            name_rhos = b.replace("rhot","rhos")
-            rhos = self.gem_l2r.data(ds=name_rhos, attributes=False)
-            rhos_weighted_ave = signal.convolve2d(rhos, self.filter, boundary='symm', mode='same')
-            # rho_adj = (rhos_weighted_ave - rhos) * _q
-            self.rhos_difference[band_name] = (rhos_weighted_ave - rhos)
+            # name_rhos = b.replace("rhot","rhos")
+            # rhos = self.gem_l2r.data(ds=name_rhos, attributes=False)
+            # rhos_weighted_ave = signal.convolve2d(rhos, self.filter, boundary='symm', mode='same')
+            # # rho_adj = (rhos_weighted_ave - rhos) * _q
+            # self.rhos_difference[band_name] = (rhos_weighted_ave - rhos)
 
         print("adjacency correction bands:{}".format(rhot_adj_bands_new))
 
@@ -102,16 +102,16 @@ class ajfilter():
         iband = 1
         for b_name,ref_name,rhot_original,attr_original in tqdm(self.rhot_adj_original,desc=desc):
             ref_name_rhos = ref_name.replace('rhot','rhos')
-            # rhos = self.gem_l2r.data(ds=ref_name_rhos, attributes=False)
-            # rhos_weighted_ave = signal.convolve2d(rhos, self.filter, boundary='symm', mode='same')
+            rhos = self.gem_l2r.data(ds=ref_name_rhos, attributes=False)
+            rhos_weighted_ave = signal.convolve2d(rhos, self.filter, boundary='symm', mode='same')
 
             backup_l1rname = os.path.join(self.output_dir,
                                               os.path.basename(self.gem.file).replace('.nc',
                                                                                       '_{}.nc'.format(iteration)))
             _q = self.__cal_diffuse_direct_trans_ratio(acmode=acmode, aot550=aot550, senz=senz, band_name=b_name)
             print("-----------Estimated Aerosol:{}, {},Q factor:{} for {}".format(acmode, aot550, _q, b_name))
-            # rho_adj = (rhos_weighted_ave - rhos) * _q
-            rho_adj = self.rhos_difference[b_name]*_q
+            rho_adj = (rhos_weighted_ave - rhos) * _q
+            # rho_adj = self.rhos_difference[b_name]*_q
 
             output_name_png = self.output_name.replace('_ajfilter', '_ajfilter.png')
             output_name_nc = self.output_name.replace('_ajfilter', '_ajfilter.nc')

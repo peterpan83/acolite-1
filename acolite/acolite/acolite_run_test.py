@@ -133,7 +133,7 @@ def acolite_run_test(settings, inputfile=None, output=None, limit=None, verbosit
                         adj_cor = ac.adjacency.ajfilter.ajfilter(l1r=l1r,l2r=l2r,settings=setu)
                         # attrs = ac.shared.nc_gatts(l2r)
                         # ac_mode = 'continental' if attrs['ac_model'].find('MOD1') > 0 else 'maritime'
-                        aot_550,ac_mode = 0,''
+                        aot_550,ac_mode = -0.01,''
                         ajfilter_iter = int(setu['ajfilter_iter'])
                         while (iter<ajfilter_iter):
                             attrs = ac.shared.nc_gatts(l2r)
@@ -148,6 +148,14 @@ def acolite_run_test(settings, inputfile=None, output=None, limit=None, verbosit
                             ret = ac.acolite.acolite_l2r(l1r_cor, settings=setu, verbosity=verbosity)
                             l2r, l2r_setu = ret
                             iter += 1
+
+                        aot_550_cur = (aot_550_cur + aot_550)/2
+                        print("final aot550:{}".format(aot_550))
+                        l1r_cor = adj_cor.run(acmode=ac_mode, aot550=aot_550_cur, senz=vza, iteration=iter)
+                        ret = ac.acolite.acolite_l2r(l1r_cor, settings=setu, verbosity=verbosity)
+                        l2r, l2r_setu = ret
+
+
 
 
                     ## acstar3 adjacency correction
