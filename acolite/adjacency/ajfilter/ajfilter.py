@@ -26,6 +26,11 @@ class ajfilter():
             nc_projection = gem.nc_projection
         gemf = gem.file
 
+        if type(l2r) is str:
+            self.gem_l2r = ac.gem.gem(l2r)
+            self.nc_projection_l2r = self.gem_l2r.nc_projection
+        self.gemf_l2 = self.gem_l2r.file
+
         ## combine default and user defined settings
         setu = ac.acolite.settings.parse(gem.gatts['sensor'], settings=settings)
         if 'verbosity' in setu: verbosity = setu['verbosity']
@@ -70,7 +75,8 @@ class ajfilter():
 
         rhot_adj_bands_new = rhot_adj_bands.copy()
         self.rhot_adj_original = []
-        for b in rhot_adj_bands:
+        self.rhos_difference = {}
+        for b in tqdm(rhot_adj_bands,"Initializing ajfiter"):
             rhot, attr = self.gem.data(ds=b, attributes=True)
             band_name = str.lower(attr['PAR'])
             if band_name in exclude_bands:
@@ -78,13 +84,16 @@ class ajfilter():
                 continue
             self.rhot_adj_original.append((band_name,b,rhot,attr))
 
+            name_rhos = b.replace("rhot","rhos")
+            rhos = self.gem_l2r.data(ds=name_rhos, attributes=False)
+            rhos_weighted_ave = signal.convolve2d(rhos, self.filter, boundary='symm', mode='same')
+            # rho_adj = (rhos_weighted_ave - rhos) * _q
+            self.rhos_difference[band_name] = (rhos_weighted_ave - rhos)
+
         print("adjacency correction bands:{}".format(rhot_adj_bands_new))
 
 
-        if type(l2r) is str:
-            self.gem_l2r = ac.gem.gem(l2r)
-            self.nc_projection_l2r = self.gem_l2r.nc_projection
-        self.gemf_l2 = self.gem_l2r.file
+
 
 
     def run(self,acmode,aot550,senz,iteration=0):
@@ -93,15 +102,17 @@ class ajfilter():
         iband = 1
         for b_name,ref_name,rhot_original,attr_original in tqdm(self.rhot_adj_original,desc=desc):
             ref_name_rhos = ref_name.replace('rhot','rhos')
-            rhos = self.gem_l2r.data(ds=ref_name_rhos, attributes=False)
-            rhos_weighted_ave = signal.convolve2d(rhos, self.filter, boundary='symm', mode='same')
+            # rhos = self.gem_l2r.data(ds=ref_name_rhos, attributes=False)
+            # rhos_weighted_ave = signal.convolve2d(rhos, self.filter, boundary='symm', mode='same')
 
             backup_l1rname = os.path.join(self.output_dir,
                                               os.path.basename(self.gem.file).replace('.nc',
                                                                                       '_{}.nc'.format(iteration)))
             _q = self.__cal_diffuse_direct_trans_ratio(acmode=acmode, aot550=aot550, senz=senz, band_name=b_name)
             print("-----------Estimated Aerosol:{}, {},Q factor:{} for {}".format(acmode, aot550, _q, b_name))
-            rho_adj = (rhos_weighted_ave - rhos) * _q
+            # rho_adj = (rhos_weighted_ave - rhos) * _q
+            rho_adj = self.rhos_difference[b_name]*_q
+
             output_name_png = self.output_name.replace('_ajfilter', '_ajfilter.png')
             output_name_nc = self.output_name.replace('_ajfilter', '_ajfilter.nc')
             rho_t_cor = rhot_original - rho_adj
