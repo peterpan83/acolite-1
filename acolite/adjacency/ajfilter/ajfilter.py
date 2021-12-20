@@ -59,12 +59,15 @@ class ajfilter():
             self.resolution = settings['s2_target_res']
 
         # maximum distance of ae is 3000m
-        self.max_distance_ae = 3*1e3
+        self.max_distance_ae = int(settings['ajfilter_max_distance'])
         self.filter_dim = int(self.max_distance_ae/self.resolution)
         self.filter = self.__gen_filter()
 
-        wave_range = (400,2300)
-        rhot_adj_bands = [i for i in sorted([b for b in gem.datasets if b.startswith('rhot')]) if (int(i.split('_')[1])>wave_range[0]) and int(i.split('_')[1])<wave_range[1]]
+        wave_range = settings['ajfilter_wave_range']
+        rhot_adj_bands = [i for i in sorted([b for b in gem.datasets if b.startswith('rhot')]) if
+                          (int(i.split('_')[1])>int(wave_range[0]))
+                          and int(i.split('_')[1])<int(wave_range[1])]
+
         rhot_adj_bands_new = rhot_adj_bands.copy()
         self.rhot_adj_original = []
         for b in rhot_adj_bands:
@@ -89,16 +92,16 @@ class ajfilter():
         self.gem.datasets_read()
         iband = 1
         for b_name,ref_name,rhot_original,attr_original in tqdm(self.rhot_adj_original,desc=desc):
-
-            rhor = self.gem_l2r.data(ds=ref_name, attributes=False)
-            rhor_weighted_ave = signal.convolve2d(rhor, self.filter, boundary='symm', mode='same')
+            ref_name_rhos = ref_name.replace('rhot','rhos')
+            rhos = self.gem_l2r.data(ds=ref_name_rhos, attributes=False)
+            rhos_weighted_ave = signal.convolve2d(rhos, self.filter, boundary='symm', mode='same')
 
             backup_l1rname = os.path.join(self.output_dir,
                                               os.path.basename(self.gem.file).replace('.nc',
                                                                                       '_{}.nc'.format(iteration)))
             _q = self.__cal_diffuse_direct_trans_ratio(acmode=acmode, aot550=aot550, senz=senz, band_name=b_name)
             print("-----------Estimated Aerosol:{}, {},Q factor:{} for {}".format(acmode, aot550, _q, b_name))
-            rho_adj = (rhor_weighted_ave - rhor) * _q
+            rho_adj = (rhos_weighted_ave - rhos) * _q
             output_name_png = self.output_name.replace('_ajfilter', '_ajfilter.png')
             output_name_nc = self.output_name.replace('_ajfilter', '_ajfilter.nc')
             rho_t_cor = rhot_original - rho_adj

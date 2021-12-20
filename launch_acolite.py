@@ -61,8 +61,8 @@ def launch_acolite():
         if args.settings is None:
             print('No settings file given')
             return()
-
         ac.acolite.acolite_run_test(args.settings, inputfile=inputfile, output=output)
+        # ac.acolite.acolite_run_test_v2(args.settings, inputfile=inputfile, output=output)
     else:
         ret = ac.acolite.acolite_gui(sys.argv, version=ac.version)
         return()

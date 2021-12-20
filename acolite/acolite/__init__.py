@@ -4,6 +4,7 @@ from .acolite_l2w import *
 
 from .acolite_run import *
 from .acolite_run_test import *
+from .acolite_run_test_v2 import *
 from .acolite_map import *
 from .acolite_gui import *
 
