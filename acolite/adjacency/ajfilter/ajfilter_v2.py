@@ -128,10 +128,9 @@ class ajfilter_v2():
                 iband += 1
             i_iter += 1
         print("writing result after ajfilter correction....")
-        copyfile(self.gemf_l2, self.gemf_l2.replace(".nc","_origin.nc"))
         for i in range(len(rhos)):
             (b_name, ref_name, rhos_single, attr_original) = rhos[i]
-            self.gem_l2r.write(ds=b_name, data=rhos_single, ds_att=attr_original)
+            self.gem_l2r.write(ds=ref_name, data=rhos_single, ds_att=attr_original)
 
         return self.gemf_l2
 
