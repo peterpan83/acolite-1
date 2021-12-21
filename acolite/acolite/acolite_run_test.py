@@ -135,27 +135,28 @@ def acolite_run_test(settings, inputfile=None, output=None, limit=None, verbosit
                         # ac_mode = 'continental' if attrs['ac_model'].find('MOD1') > 0 else 'maritime'
                         aot_550,ac_mode = -0.01,''
                         ajfilter_iter = int(setu['ajfilter_iter'])
-                        while (iter<ajfilter_iter):
+                        while (True):
                             attrs = ac.shared.nc_gatts(l2r)
                             vza = attrs['vza']
-                            aot_550_cur = ac.shared.nc_read(l2r, 'aot_550')[0].mean()
-                            ac_mode_cur = 'continental' if attrs['ac_model'].find('MOD1') > 0 else 'maritime'
 
-                            if abs(aot_550_cur-aot_550)<0.01 and ac_mode==ac_mode_cur:
+                            aot_550_s = [0,0]
+                            for i in range(2):
+                                aot_550_cur = ac.shared.nc_read(l2r, 'aot_550')[0].mean()
+                                ac_mode = 'continental' if attrs['ac_model'].find('MOD1') > 0 else 'maritime'
+                                aot_550_s[i] = aot_550_cur
+                                l1r_cor = adj_cor.run(acmode=ac_mode, aot550=aot_550_cur, senz=vza, iteration=iter)
+                                ret = ac.acolite.acolite_l2r(l1r_cor, settings=setu, verbosity=verbosity)
+                                l2r, l2r_setu = ret
+                            aot_550_mean = (aot_550_s[0]+aot_550_s[1])/2
+                            if abs(aot_550_s[0]-aot_550_s[1]) < 0.01 or (iter > ajfilter_iter):
                                 break
-                            aot_550,ac_mode = aot_550_cur, ac_mode_cur
-                            l1r_cor = adj_cor.run(acmode=ac_mode,aot550=aot_550_cur,senz=vza,iteration=iter)
-                            ret = ac.acolite.acolite_l2r(l1r_cor, settings=setu, verbosity=verbosity)
+                            setu_c = setu.copy()
+                            setu_c['dsf_fixed_aot'] = aot_550_mean
+                            setu_c['dsf_fixed_lut'] = attrs['ac_model']
+                            # l1r_cor = adj_cor.run(acmode=ac_mode, aot550=aot_550_mean, senz=vza, iteration=iter)
+                            ret = ac.acolite.acolite_l2r(l1r, settings=setu_c, verbosity=verbosity)
                             l2r, l2r_setu = ret
                             iter += 1
-
-                        aot_550_cur = (aot_550_cur + aot_550)/2
-                        print("final aot550:{}".format(aot_550))
-                        l1r_cor = adj_cor.run(acmode=ac_mode, aot550=aot_550_cur, senz=vza, iteration=iter)
-                        ret = ac.acolite.acolite_l2r(l1r_cor, settings=setu, verbosity=verbosity)
-                        l2r, l2r_setu = ret
-
-
 
 
                     ## acstar3 adjacency correction
