@@ -142,6 +142,7 @@ def acolite_run_test(settings, inputfile=None, output=None, limit=None, verbosit
                             aot_550_s = [0,0]
                             for i in range(2):
                                 aot_550_cur = ac.shared.nc_read(l2r, 'aot_550')[0].mean()
+                                if aot_550==-0.01:aot_550=aot_550_cur
                                 ac_mode = 'continental' if attrs['ac_model'].find('MOD1') > 0 else 'maritime'
                                 aot_550_s[i] = aot_550_cur
                                 l1r_cor = adj_cor.run(acmode=ac_mode, aot550=aot_550_cur, senz=vza, iteration=iter)
@@ -158,6 +159,8 @@ def acolite_run_test(settings, inputfile=None, output=None, limit=None, verbosit
 
                             print(abs(aot_550_s[0]-aot_550_s[1]))
                             if abs(aot_550_s[0]-aot_550_s[1]) < 0.001 or (iter > ajfilter_iter):
+
+                                setu_c['dsf_fixed_aot'] = aot_550
                                 l1r_cor = adj_cor.run(acmode=ac_mode, aot550=aot_550_mean, senz=vza, iteration=iter)
                                 ret = ac.acolite.acolite_l2r(l1r_cor, settings=setu_c, verbosity=verbosity)
                                 l2r, l2r_setu = ret
