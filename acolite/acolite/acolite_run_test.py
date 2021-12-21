@@ -147,16 +147,17 @@ def acolite_run_test(settings, inputfile=None, output=None, limit=None, verbosit
                                 l1r_cor = adj_cor.run(acmode=ac_mode, aot550=aot_550_cur, senz=vza, iteration=iter)
                                 ret = ac.acolite.acolite_l2r(l1r_cor, settings=setu, verbosity=verbosity)
                                 l2r, l2r_setu = ret
+                                iter += 1
                             aot_550_mean = (aot_550_s[0]+aot_550_s[1])/2
-                            if abs(aot_550_s[0]-aot_550_s[1]) < 0.01 or (iter > ajfilter_iter):
-                                break
                             setu_c = setu.copy()
                             setu_c['dsf_fixed_aot'] = aot_550_mean
                             setu_c['dsf_fixed_lut'] = attrs['ac_model']
                             # l1r_cor = adj_cor.run(acmode=ac_mode, aot550=aot_550_mean, senz=vza, iteration=iter)
-                            ret = ac.acolite.acolite_l2r(l1r, settings=setu_c, verbosity=verbosity)
+                            ret = ac.acolite.acolite_l2r(l1r_cor, settings=setu_c, verbosity=verbosity)
                             l2r, l2r_setu = ret
-                            iter += 1
+                            if abs(aot_550_s[0]-aot_550_s[1]) < 0.01 or (iter > ajfilter_iter):
+                                break
+
 
 
                     ## acstar3 adjacency correction
