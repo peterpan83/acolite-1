@@ -97,7 +97,7 @@ class ajfilter():
 
     def run(self,acmode,aot550,senz,iteration=0):
         desc = "Adjacency correctiong, Iteration:{}".format(iteration)
-        self.gem.datasets_read()
+        # self.gem.datasets_read()
         iband = 1
         for b_name,ref_name,rhot_original,attr_original in tqdm(self.rhot_adj_original,desc=desc):
             if iteration == 1:
@@ -129,11 +129,6 @@ class ajfilter():
 
             self.gem.write(ds=ref_name, data=rho_t_cor, ds_att=attr_original)
 
-            # ac.output.nc_write(os.path.join(self.output_dir,output_name_nc), 'rhot_865_cor',
-            #                    rho_t_cor, attributes={}, replace_nan=True,
-            #                    new=True,
-            #                    dataset_attributes={},
-            #                    nc_projection=self.gem.nc_projection)
 
             rhot_adj_new = True if (iteration == 0) and (iband==1)  else False
             ac.output.nc_write(os.path.join(self.output_dir, output_name_nc), '{}_adj_{}'.format(ref_name, iteration),
@@ -145,51 +140,32 @@ class ajfilter():
 
         return self.gem.file
 
-    # def __cor_single_band(self, band_name,ref_name,acmode,aot550,senz,iteration=0):
-    #     '''
-    #     :param acmode: aerosol type
-    #     :param aot550:
-    #     :param senz:
-    #     :return:
-    #     '''
-    #
-    #     self.gem.datasets_read()
-    #     rhot = self.gem.data(ds='rhot_865', attributes=False)
-    #     rhot_weighted_ave = signal.convolve2d(rhot, self.filter, boundary='symm', mode='same')
-    #
-    #     backup_l1rname = os.path.join(self.output_dir,
-    #                                   os.path.basename(self.gem.file).replace('.nc', '_{}.nc'.format(iteration)))
-    #
-    #     _q = self.__cal_diffuse_direct_trans_ratio(acmode=acmode,aot550=aot550,senz=senz,band_name='band_05')
-    #     print("-----------Estimated Aerosol:{}, {},{},Q factor:".format(acmode, aot550,_q))
-    #     rho_adj = (rhot_weighted_ave - rhot) * _q
-    #     output_name_png = self.output_name.replace('_ajfilter','_ajfilter.png')
-    #     output_name_nc  = self.output_name.replace('_ajfilter','_ajfilter.nc')
-    #     # plt.figure()
-    #     # plt.imshow(rho_adj)
-    #     # plt.colorbar()
-    #     # plt.savefig(os.path.join(self.output_dir,output_name))
-    #     # plt.close()
-    #     rho_t_cor = self.rhot_original-rho_adj
-    #
-    #     ## backup the original L1R
-    #
-    #     copyfile(self.gem.file, backup_l1rname)
-    #     self.gem.write(ds='rhot_865', data=rho_t_cor, ds_att=self.attr_original)
-    #
-    #     # ac.output.nc_write(os.path.join(self.output_dir,output_name_nc), 'rhot_865_cor',
-    #     #                    rho_t_cor, attributes={}, replace_nan=True,
-    #     #                    new=True,
-    #     #                    dataset_attributes={},
-    #     #                    nc_projection=self.gem.nc_projection)
-    #
-    #     rhot_adj_new = True if iteration==0 else False
-    #     ac.output.nc_write(os.path.join(self.output_dir,output_name_nc), 'rhot_adj_{}_{}'.format(865,iteration),
-    #                        rho_adj, attributes={}, replace_nan=True,
-    #                        new=rhot_adj_new,
-    #                        dataset_attributes={},
-    #                        nc_projection=self.gem.nc_projection)
-    #     return self.gem.file
+
+    def correct_l2r(self,acmode,aot550,senz,settings):
+        iband = 1
+        for b_name,ref_name,rhot_original,attr_original in tqdm(self.rhot_adj_original,"correct final adj for l2r"):
+            name_rhos = ref_name.replace("rhot","rhos")
+            rhos,rhos_att = self.gem_l2r.data(ds=name_rhos, attributes=True)
+
+            _q = self.__cal_diffuse_direct_trans_ratio(acmode=acmode, aot550=aot550, senz=senz, band_name=b_name)
+            # print("-----------Estimated Aerosol:{}, {},Q factor:{} for {}".format(acmode, aot550, _q, b_name))
+            # rho_adj = (rhos_weighted_ave - rhos) * _q
+            rho_adj = self.rhos_difference[b_name]*_q
+
+            # output_name_png = self.output_name.replace('_ajfilter', '_ajfilter.png')
+            output_name_nc = self.output_name.replace('_ajfilter', '_ajfilter.nc')
+            rho_s_cor = rhos - rho_adj
+            rho_s_cor[rho_s_cor<=0] = 3e-4
+
+            self.gem_l2r.write(ds=name_rhos, data=rho_s_cor, ds_att=rhos_att)
+            ac.output.nc_write(os.path.join(self.output_dir, output_name_nc), '{}_adj'.format(ref_name),
+                               rho_adj, attributes={}, replace_nan=True,
+                               new=True,
+                               dataset_attributes={},
+                               nc_projection=self.gem.nc_projection)
+            iband += 1
+
+        return self.gem_l2r.file,settings
 
 
     def __gen_filter(self,scale=1.0):

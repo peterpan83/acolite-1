@@ -8,6 +8,7 @@
 def acolite_run_test(settings, inputfile=None, output=None, limit=None, verbosity=0):
     import datetime, os, mimetypes
     import acolite as ac
+    from shutil import copyfile
 
     print('Running generic ACOLITE processing - {}'.format(ac.version))
     ## time of processing start
@@ -159,11 +160,11 @@ def acolite_run_test(settings, inputfile=None, output=None, limit=None, verbosit
 
                             print(abs(aot_550_s[0]-aot_550_s[1]))
                             if abs(aot_550_s[0]-aot_550_s[1]) < 0.001 or (iter > ajfilter_iter):
-
-                                setu_c['dsf_fixed_aot'] = aot_550
-                                l1r_cor = adj_cor.run(acmode=ac_mode, aot550=aot_550_mean, senz=vza, iteration=iter)
-                                ret = ac.acolite.acolite_l2r(l1r_cor, settings=setu_c, verbosity=verbosity)
-                                l2r, l2r_setu = ret
+                                # setu_c['dsf_fixed_aot'] = aot_550
+                                # ret = ac.acolite.acolite_l2r(adj_cor.orignal_l1r, settings=setu_c, verbosity=verbosity)
+                                # l2r_origin, l2r_setu = ret
+                                # copyfile(l2r_origin,l2r)
+                                # l2r, l2r_setu = adj_cor.correct_l2r(acmode=ac_mode, aot550=aot_550_mean, senz=vza, settings=l2r_setu)
                                 break
                             else:
                                 ret = ac.acolite.acolite_l2r(adj_cor.orignal_l1r, settings=setu_c, verbosity=verbosity)
