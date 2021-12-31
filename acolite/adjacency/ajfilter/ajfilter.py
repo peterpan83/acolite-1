@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from shutil import copyfile
 from tqdm import tqdm
+from skimage.transform import rescale,resize
 
 class ajfilter():
 
@@ -56,6 +57,7 @@ class ajfilter():
         self.coef_df = coef_df[coef_df['atm_type']=='sas']
         self.coef_cols = [col for col in self.coef_df.columns if col.startswith('coef')]
         self.offset_col = 'intercept'
+        self.resolution_filter = 30 ## the resolution of filter is 30 m
 
         exclude_bands = []
         if sensor in ['L8_OLI']:
@@ -63,10 +65,11 @@ class ajfilter():
             exclude_bands = ['band_8','band_9']
         elif sensor in ['S2A_MSI', 'S2B_MSI']:
             self.resolution = settings['s2_target_res']
+            exclude_bands = ['band_9', 'band_10','band_11', 'band_12']
 
         # maximum distance of ae is 3000m
         self.max_distance_ae = int(settings['ajfilter_max_distance'])
-        self.filter_dim = int(self.max_distance_ae/self.resolution)
+        self.filter_dim = int(self.max_distance_ae/self.resolution_filter)
         self.filter = self.__gen_filter()
 
         wave_range = settings['ajfilter_wave_range']
@@ -87,8 +90,14 @@ class ajfilter():
 
             name_rhos = b.replace("rhot","rhos")
             rhos = self.gem_l2r.data(ds=name_rhos, attributes=False)
-            rhos_weighted_ave = signal.convolve2d(rhos, self.filter, boundary='symm', mode='same')
-            # rho_adj = (rhos_weighted_ave - rhos) * _q
+            if self.resolution != self.resolution_filter:
+                rhos_re = rescale(rhos,self.resolution/self.resolution_filter,anti_aliasing=False)
+                rhos_weighted_ave_re = signal.convolve2d(rhos_re, self.filter, boundary='symm', mode='same')
+                rhos_weighted_ave = resize(rhos_weighted_ave_re, (rhos.shape[0],rhos.shape[1]), anti_aliasing=False)
+                print(rhos.shape,rhos_re.shape,rhos_weighted_ave.shape)
+            else:
+                rhos_weighted_ave = signal.convolve2d(rhos, self.filter, boundary='symm', mode='same')
+
             self.rhos_difference[band_name] = (rhos_weighted_ave - rhos)
         self.rhot_adj_bands = rhot_adj_bands_new
         print("adjacency correction bands:{}".format(rhot_adj_bands_new))
@@ -103,7 +112,16 @@ class ajfilter():
             if iteration == 1:
                 ref_name_rhos = ref_name.replace('rhot', 'rhos')
                 rhos = self.gem_l2r.data(ds=ref_name_rhos, attributes=False)
-                rhos_weighted_ave = signal.convolve2d(rhos, self.filter, boundary='symm', mode='same')
+
+                if self.resolution != self.resolution_filter:
+                    rhos_re = rescale(rhos, self.resolution / self.resolution_filter, anti_aliasing=False)
+                    rhos_weighted_ave_re = signal.convolve2d(rhos_re, self.filter, boundary='symm', mode='same')
+                    rhos_weighted_ave = resize(rhos_weighted_ave_re, (rhos.shape[0],rhos.shape[1]),
+                                                anti_aliasing=False)
+                else:
+                    rhos_weighted_ave = signal.convolve2d(rhos, self.filter, boundary='symm', mode='same')
+
+                # rhos_weighted_ave = signal.convolve2d(rhos, self.filter, boundary='symm', mode='same')
                 # rho_adj = (rhos_weighted_ave - rhos) * _q
                 self.rhos_difference[b_name] = (rhos_weighted_ave - rhos)
 

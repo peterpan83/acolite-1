@@ -199,6 +199,7 @@ def l1_convert(inputfile, output = None,
             gatts['{}_wave'.format(b)] = waves_mu[b]*1000
             gatts['{}_name'.format(b)] = waves_names[b]
             gatts['{}_f0'.format(b)] = f0_b[b]
+
             #if b in fmeta:
             #    fmeta[b]['f0'] = f0_b[b]
             #    fmeta[b]['se_distance'] = gatts['se_distance']
@@ -641,7 +642,7 @@ def l1_convert(inputfile, output = None,
                     data[data_mask] = np.nan
                     if clip: data[clip_mask] = np.nan
                     ds = 'rhot_{}'.format(waves_names[b])
-                    ds_att = {'wavelength':waves_mu[b]*1000}
+                    ds_att = {'wavelength':waves_mu[b]*1000,'PAR':'BAND_{}'.format(b)}
 
                     if gains & (gains_dict is not None):
                         ds_att['toa_gain'] = gains_dict[b]
