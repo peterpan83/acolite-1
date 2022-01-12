@@ -119,7 +119,7 @@ def acolite_run(settings, inputfile=None, output=None, limit=None, verbosity=0):
             if l1r_setu['atmospheric_correction']:
                 if gatts['acolite_file_type'] == 'L1R':
                     ## run ACOLITE
-                    ret = ac.acolite.acolite_l2r_test(l1r, settings = setu, verbosity = verbosity)
+                    ret = ac.acolite.acolite_l2r(l1r, settings = setu, verbosity = verbosity)
                     if len(ret) != 2: continue
                     l2r, l2r_setu = ret
                 else:
